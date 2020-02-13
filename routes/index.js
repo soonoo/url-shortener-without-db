@@ -4,6 +4,32 @@ const { createInterface } = require('readline');
 const { createHash } = require('crypto');
 const mkdirp = require('mkdirp');
 
+router.get('/all', async (ctx, next) => {
+  const readable = createReadStream('./db/metadata/list');
+  let ret = [];
+  let hasUrl = false;
+  let count = 0;
+  const rl = createInterface({
+    input: readable,
+  });
+
+  const rlPromise = new Promise((resolve, reject) => {
+    rl.on('close', () => resolve());
+  });
+  rl.on('line', (line) => {
+    if(count++ > 20) {
+      rl.close();
+      return;
+    }
+    const [url, hash] = line.split(' ');
+    ret = ret.concat([{ url, hash }]);
+  });
+  await rlPromise;
+
+  ctx.body = ret;
+});
+
+// redirect hash to original url
 router.get('/:checksum', async (ctx, next) => {
   const { checksum } = ctx.params;
   const fileName = `./db/${checksum[0]}/${checksum[1]}/${checksum.slice(2)}`;
@@ -17,6 +43,7 @@ router.get('/:checksum', async (ctx, next) => {
   }
 });
 
+// transform url to hash
 router.post('/', async (ctx, next) => {
   const { body } = ctx.request;
   let i = 0;
@@ -37,16 +64,14 @@ router.post('/', async (ctx, next) => {
   });
 
   const rlPromise = new Promise((resolve, reject) => {
-    rl.on('close', () => resolve('asd'));
-    rl.on('abcd', () => resolve('abcd'));
+    rl.on('close', () => resolve());
   });
   rl.on('line', (line) => {
     const [url, hash] = line.split(' ');
     if(url === body) {
+      console.log(url, hash)
       hasUrl = true;
-      rl.emit('abcd');
-      readable.emit('end');
-      readable.close();
+      rl.close();
     }
   });
   await rlPromise;
@@ -60,7 +85,6 @@ router.post('/', async (ctx, next) => {
 
 router.delete('/', async (ctx, next) => {
   const { body } = ctx.request;
-
 });
 
 module.exports = router
