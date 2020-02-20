@@ -6,28 +6,11 @@ const mkdirp = require('mkdirp');
 const db = require('../services');
 
 router.get('/all', async (ctx, next) => {
-  const readable = createReadStream('./db/metadata/list');
-  let ret = [];
-  let hasUrl = false;
-  let count = 0;
-  const rl = createInterface({
-    input: readable,
-  });
+  const { skip, limit } = ctx.query;
 
-  const rlPromise = new Promise((resolve, reject) => {
-    rl.on('close', () => resolve());
+  ctx.body = await db.loadBulk({
+    skip: Number(skip || 0), limit: Number(limit || 30)
   });
-  rl.on('line', (line) => {
-    if(count++ > 20) {
-      rl.close();
-      return;
-    }
-    const [url, hash] = line.split(' ');
-    ret = ret.concat([{ url, hash }]);
-  });
-  await rlPromise;
-
-  ctx.body = ret;
 });
 
 // redirect hash to original url
@@ -38,7 +21,6 @@ router.get('/:hash', async (ctx, next) => {
   ctx.redirect(url);
 });
 
-// transform url to hash
 router.post('/', async (ctx, next) => {
   const { body } = ctx.request;
   const regex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;

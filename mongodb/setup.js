@@ -1,8 +1,4 @@
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 
-const url = 'mongodb://localhost:27017';
-module.exports = (async () => {
-  const client = await MongoClient.connect(url);
-  return client.db('bitly');
-})();
+module.exports = mongoose.connect('mongodb://localhost:27017/bitly');
 
