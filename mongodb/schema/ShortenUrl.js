@@ -6,6 +6,7 @@ const shortenUrlSchema = mongoose.Schema({
 }, {
   timestamps: { createdAt: 'createdAt' }
 });
+shortenUrlSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('ShortenUrl', shortenUrlSchema);
 
